@@ -15,7 +15,7 @@ public class Map extends Panel {
 	private int preX, preY, frameWidth, frameHeight;
 	MouseManager mouseManager;
 	KeyManager keyManager;
-	private int mapNum;
+	private int mapNum, sizeNum;
 	private String mapPath[];
 	private Display display;
 	private BufferedImage map;
@@ -28,9 +28,12 @@ public class Map extends Panel {
 		this.keyManager = keyManager;
 		this.display = display;
 		mapNum = 0;
-		size = new int[2];
-		size[0] = 2000;
-		size[1] = 4000;
+		sizeNum = 0;
+		size = new int[4];
+		size[0] = 1000;
+		size[1] = 2000;
+		size[2] = 3000;
+		size[3] = 4000;
 		mapPath = new String[2];
 		mapPath[0] = "/2000x2000.png";
 		mapPath[1] = "/4000x4000.png";
@@ -63,30 +66,40 @@ public class Map extends Panel {
 		}
 	}
 
-	public void changeMapSize() {
-		if (mouseManager.getNotches() < 0) {
-			if (mapNum < mapPath.length - 1) {
-				mapNum++;
+	public void zoom() {
+		if (mouseManager.isZoomIn()) {
+			if (sizeNum < size.length - 1) {
+				sizeNum++;
+				mapNum = sizeNum / 2;
 				map = ImageLoader.loadImage(mapPath[mapNum]);
 			}
-		} else {
-			if (mapNum > 0) {
-				mapNum--;
-				map = ImageLoader.loadImage(mapPath[mapNum]);
-			}
-		}
+			mouseManager.setZoom();
 
+		} else if (mouseManager.isZoomOut()) {
+			if (sizeNum > 0) {
+				sizeNum--;
+				mapNum = sizeNum / 2;
+				map = ImageLoader.loadImage(mapPath[mapNum]);
+			}
+			mouseManager.setZoom();
+		}
 	}
 
 	public void rescale() {
 		if (x > 0)
 			x = 0;
-		else if (x < frameWidth - size[mapNum])
-			x = frameWidth - size[mapNum];
+		else if (frameWidth - size[sizeNum] < 0) {
+			if (x < frameWidth - size[sizeNum])
+				x = frameWidth - size[sizeNum];
+		} else
+			x = 0;
 		if (y > 0)
 			y = 0;
-		else if (y < frameHeight - size[mapNum])
-			y = frameHeight - size[mapNum];
+		else if (frameWidth - size[sizeNum] < 0) {
+			if (y < frameHeight - size[sizeNum])
+				y = frameHeight - size[sizeNum];
+		} else
+			y = 0;
 	}
 
 	@Override
@@ -95,13 +108,13 @@ public class Map extends Panel {
 		frameHeight = (int) display.getFrame().getBounds().getHeight();
 		updateX();
 		updateY();
-		changeMapSize();
+		zoom();
 		rescale();
-		System.out.println(x + " " + frameWidth + " " + size[mapNum]);
+		System.out.println(x + " " + frameWidth + " " + size[sizeNum] + " " + mapNum);
 	}
 
 	@Override
 	public void render(Graphics g) {
-		g.drawImage(map, x, y, size[mapNum], size[mapNum], null);
+		g.drawImage(map, x, y, size[sizeNum]-20, size[sizeNum]-20, null);
 	}
 }

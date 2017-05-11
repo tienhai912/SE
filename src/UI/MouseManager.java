@@ -9,8 +9,9 @@ import java.awt.event.MouseWheelListener;
 public class MouseManager implements MouseListener, MouseMotionListener, MouseWheelListener {
 
 	private int x, y;
-	private boolean Pressed = false;
+	private boolean Pressed = false, zoomIn = false, zoomOut = false;
 	private int notches;
+	private long zoomTimer = 500, lastZoom;
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
@@ -50,8 +51,22 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-
 		notches = e.getWheelRotation();
+		if (notches != 0) {
+			zoomTimer += System.currentTimeMillis() - lastZoom;
+			lastZoom = System.currentTimeMillis();
+			if (zoomTimer < 100)
+				return;
+			zoomTimer = 0;
+			if (notches < 0)
+				zoomIn = true;
+			else
+				zoomOut = true;
+		}
+	}
+
+	public void setZoom() {
+		zoomIn = zoomOut = false;
 	}
 
 	// GETTER AND SETTER
@@ -71,5 +86,13 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 	public int getNotches() {
 		return notches;
 	}
-	
+
+	public boolean isZoomIn() {
+		return zoomIn;
+	}
+
+	public boolean isZoomOut() {
+		return zoomOut;
+	}
+
 }
