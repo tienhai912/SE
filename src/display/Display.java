@@ -2,6 +2,7 @@ package display;
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -41,6 +42,7 @@ public class Display {
         
         //panel
         panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
         panel.add(BorderLayout.CENTER,  canvas);
 
         frame.add(panel);
