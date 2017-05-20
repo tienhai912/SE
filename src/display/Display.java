@@ -4,64 +4,111 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import UI.KeyManager;
+import UI.MouseManager;
+import panel.Map;
+import panel.Search;
+
 public class Display {
 
-    private JFrame frame;
-    private JPanel panel;
-    private Canvas canvas;
+	private JFrame frame;
+	private JPanel panel, canvasPanel;
+	private Canvas canvas;
 
+	private Map map;
+	private Search search;
 
-    private String title;
-    private int width, height;
+	private String title;
+	private int width, height;
 
-    public Display(String title, int width, int height) {
-        this.title = title;
-        this.width = width;
-        this.height = height;
+	private KeyManager keyManager;
+	private MouseManager mouseManager;
 
-        createDisplay();
-    }
+	public Display(String title, int width, int height, KeyManager keyManager, MouseManager mouseManager) {
+		this.title = title;
+		this.width = width;
+		this.height = height;
+		this.keyManager = keyManager;
+		this.mouseManager = mouseManager;
 
-    private void createDisplay() {
-    	//frame
-        frame = new JFrame(title);
-        frame.setSize(width, height);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(true);
-        frame.setLocationRelativeTo(null);
-        
-        //canvas
-        canvas = new Canvas();
-        canvas.setPreferredSize(new Dimension(width, height));
-        canvas.setMaximumSize(new Dimension(width-200, height));
-        canvas.setMinimumSize(new Dimension(width, height));
-        canvas.setFocusable(false);
-        
-        //panel
-        panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.add(BorderLayout.CENTER,  canvas);
+		init();
+	}
 
-        frame.add(panel);
-        frame.pack();
-        frame.setVisible(true);
-        
-    }
-    
-    
+	private void init() {
+		// frame
+		frame = new JFrame(title);
+		frame.setSize(width, height);
+		frame.setPreferredSize(new Dimension(width, height));
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setResizable(true);
+		frame.setLocationRelativeTo(null);
 
-    public JPanel getPanel() {
+		// canvas
+		canvasPanel = new JPanel(new BorderLayout());
+		canvasPanel.setPreferredSize(new Dimension(width * 4 / 5, height));
+		canvasPanel.setMaximumSize(new Dimension(width * 4 / 5, height));
+		canvasPanel.setMinimumSize(new Dimension(width * 4 / 5, height));
+		canvas = new Canvas();		
+		canvas.setFocusable(false);
+		canvasPanel.setBackground(Color.WHITE);
+		canvasPanel.add(BorderLayout.CENTER, canvas);
+		
+		// panel
+		panel = new JPanel(new BorderLayout());
+		panel.setPreferredSize(new Dimension(width, height));
+		panel.setBackground(Color.WHITE);
+		panel.add(BorderLayout.CENTER, canvasPanel);
+
+		frame.add(panel);
+		frame.pack();
+		frame.setVisible(true);
+
+		map = new Map(0, 0, width * 4 / 5, height, this, mouseManager);
+		search = new Search(0, 0, width / 5, height, this, mouseManager, keyManager);
+
+	}
+
+	// Methods
+
+	public void tick() {
+		if (frame.getWidth() != width || frame.getHeight() != height) {
+			width = frame.getWidth();
+			height = frame.getHeight();
+			resize();
+		}
+		map.tick();
+		search.tick();
+	}
+
+	public void render(Graphics g) {
+		map.render(g);
+		search.render(g);
+	}
+
+	public void resize() {
+		canvasPanel.setPreferredSize(new Dimension(width * 4 / 5, height));
+		canvasPanel.setMaximumSize(new Dimension(width * 4 / 5, height));
+		canvasPanel.setMinimumSize(new Dimension(width * 4 / 5, height));
+
+		search.resize(width / 5, height);
+	}
+
+	// GETTER AND SETTER
+
+	public JPanel getPanel() {
 		return panel;
 	}
 
 	public Canvas getCanvas() {
-        return canvas;
-    }
+		return canvas;
+	}
 
-    public JFrame getFrame() {
-        return frame;
-    }
+	public JFrame getFrame() {
+		return frame;
+	}
 }

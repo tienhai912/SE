@@ -8,8 +8,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import javax.swing.ImageIcon;
@@ -34,14 +32,14 @@ public class Search extends Panel {
 		init();
 
 	}
+	
+	// init
 
 	public void init() {
 		// searchPanel
 		searchPanel = new JPanel(new BorderLayout());
 		searchPanel.setBackground(Color.WHITE);
-		searchPanel.setPreferredSize(new Dimension(200, 50));
-		searchPanel.setMaximumSize(new Dimension(200, 50));
-		searchPanel.setMinimumSize(new Dimension(200, 50));
+		searchPanel.setPreferredSize(new Dimension(width, height));
 
 		// tabPanel
 		tabbedPane = new JTabbedPane();
@@ -60,42 +58,121 @@ public class Search extends Panel {
 		infoPanel.setBackground(Color.WHITE);
 		ImageIcon icon = createImageIcon("");
 		infoTextField = new JTextField("Enter text here");
-		infoTextField.setPreferredSize(new Dimension(190, 30));
-		infoTextField.setMaximumSize(new Dimension(190, 30));
-		infoTextField.setMinimumSize(new Dimension(190, 30));
+		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
 		infoTextField.selectAll();
-		infoTextField.addActionListener(new InfoListener());
+
+		// listener
+		infoTextField.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				infoTextFieldMouseClicked(evt);
+			}
+		});
+
+		infoTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(java.awt.event.KeyEvent evt) {
+				infoTextFieldKeyPressed(evt);
+			}
+		});
+		//
 		infoPanel.add(infoTextField);
 		tabbedPane.addTab("Info", icon, infoPanel, "Station Infomation");
 		tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 	}
 
+
 	public void naviTab() {
 		naviPanel = new JPanel();
 		naviPanel.setBackground(Color.WHITE);
 		ImageIcon icon = createImageIcon("");
-		
+
 		// from
 		fromTextField = new JTextField("Enter text here");
-		fromTextField.setPreferredSize(new Dimension(190, 30));
-		fromTextField.setMaximumSize(new Dimension(190, 30));
-		fromTextField.setMinimumSize(new Dimension(190, 30));
+		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
 		fromTextField.selectAll();
-		fromTextField.addActionListener(new FromListener());
 		naviPanel.add(fromTextField);
-		
+
+		// listener
+		fromTextField.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				fromTextFieldMouseClicked(evt);
+			}
+		});
+		fromTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(java.awt.event.KeyEvent evt) {
+				fromTextFieldKeyPressed(evt);
+			}
+		});
+
 		// to
 		toTextField = new JTextField("Enter text here");
-		toTextField.setPreferredSize(new Dimension(190, 30));
-		toTextField.setMaximumSize(new Dimension(190, 30));
-		toTextField.setMinimumSize(new Dimension(190, 30));
+		toTextField.setPreferredSize(new Dimension(width - 10, 30));
 		toTextField.selectAll();
 		naviPanel.add(toTextField);
-		toTextField.addActionListener(new ToListener());
-		
+
+		// listener
+		toTextField.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				toTextFieldMouseClicked(evt);
+			}
+		});
+		toTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(java.awt.event.KeyEvent evt) {
+				toTextFieldKeyPressed(evt);
+			}
+		});
+
+		//
 		tabbedPane.addTab("Navi", icon, naviPanel, "Navigation");
 		tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 	}
+	
+	//methods
+	
+	public void resize(int width, int height){
+		searchPanel.setPreferredSize(new Dimension(width, height));
+		searchPanel.setMaximumSize(new Dimension(width, height));
+		searchPanel.setMinimumSize(new Dimension(width, height));
+		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
+		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
+		toTextField.setPreferredSize(new Dimension(width - 10, 30));
+		
+	}
+
+	// Listener methods
+	private void infoTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
+		infoTextField.setText("");
+	}
+
+	private void fromTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
+		fromTextField.setText("");
+	}
+
+	private void toTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
+		toTextField.setText("");
+	}
+
+	private void infoTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
+		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+			System.out.println(infoTextField.getText());
+			infoTextField.setText("");
+		}
+	}
+
+	private void fromTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
+		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+			System.out.println(fromTextField.getText());
+			fromTextField.setText("");
+		}
+	}
+
+	private void toTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
+		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+			System.out.println(toTextField.getText());
+			toTextField.setText("");
+		}
+	}
+	
+	//
 
 	protected static ImageIcon createImageIcon(String path) {
 		java.net.URL imgURL = Search.class.getResource(path);
@@ -104,24 +181,6 @@ public class Search extends Panel {
 		} else {
 			System.err.println("Couldn't find file: " + path);
 			return null;
-		}
-	}
-
-	public class InfoListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			System.out.println(infoTextField.getText());
-		}
-	}
-
-	public class FromListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			System.out.println(fromTextField.getText());
-		}
-	}
-
-	public class ToListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			System.out.println(toTextField.getText());
 		}
 	}
 
