@@ -2,27 +2,45 @@ package panel;
 
 import UI.KeyManager;
 import UI.MouseManager;
+import client.Client;
 import display.Display;
+import init_data.Station;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class Search extends Panel {
 
 	private static final long serialVersionUID = 1L;
 	MouseManager mouseManager;
 	KeyManager keyManager;
-	private JPanel searchPanel, naviPanel, infoPanel;
+	private JPanel searchPanel, naviPanel, infoPanel, infoResultPanel;
 	private JTextField infoTextField, fromTextField, toTextField;
 	private JTabbedPane tabbedPane;
+
+	private JTextPane infoResultTextPane;
+	private StyledDocument doc;
+	private Font infoFont;
 
 	public Search(int x, int y, int width, int height, Display display, MouseManager mouseManager,
 			KeyManager keyManager) {
@@ -32,7 +50,7 @@ public class Search extends Panel {
 		init();
 
 	}
-	
+
 	// init
 
 	public void init() {
@@ -51,12 +69,16 @@ public class Search extends Panel {
 		// important
 		display.getPanel().add(BorderLayout.WEST, searchPanel);
 		display.getFrame().setVisible(true);
+		createInfoFont();
 	}
 
 	public void infoTab() {
 		infoPanel = new JPanel();
 		infoPanel.setBackground(Color.WHITE);
 		ImageIcon icon = createImageIcon("");
+
+		JLabel infoText = new JLabel("Station");
+		infoPanel.add(infoText);
 		infoTextField = new JTextField("Enter text here");
 		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
 		infoTextField.selectAll();
@@ -73,12 +95,23 @@ public class Search extends Panel {
 				infoTextFieldKeyPressed(evt);
 			}
 		});
+		// infoResultPanel
+		infoResultPanel = new JPanel();
+		infoResultPanel.setPreferredSize(new Dimension(width, height - 50));
+		infoResultPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		infoResultPanel.setBackground(Color.WHITE);
+
+		infoResultTextPane = new JTextPane();
+		doc = infoResultTextPane.getStyledDocument();
+
+		infoResultPanel.add(infoResultTextPane);
+
 		//
 		infoPanel.add(infoTextField);
+		infoPanel.add(infoResultPanel);
 		tabbedPane.addTab("Info", icon, infoPanel, "Station Infomation");
 		tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 	}
-
 
 	public void naviTab() {
 		naviPanel = new JPanel();
@@ -86,9 +119,12 @@ public class Search extends Panel {
 		ImageIcon icon = createImageIcon("");
 
 		// from
+		JLabel fromText = new JLabel("Starting Point");
+		naviPanel.add(fromText);
 		fromTextField = new JTextField("Enter text here");
 		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
 		fromTextField.selectAll();
+
 		naviPanel.add(fromTextField);
 
 		// listener
@@ -104,6 +140,8 @@ public class Search extends Panel {
 		});
 
 		// to
+		JLabel toText = new JLabel("Destination");
+		naviPanel.add(toText);
 		toTextField = new JTextField("Enter text here");
 		toTextField.setPreferredSize(new Dimension(width - 10, 30));
 		toTextField.selectAll();
@@ -121,60 +159,143 @@ public class Search extends Panel {
 			}
 		});
 
+		// swap
+		JButton swapButton = new JButton("Swap");
+		swapButton.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				swapButtonMouseClicked(evt);
+			}
+		});
+		naviPanel.add(swapButton);
+
 		//
 		tabbedPane.addTab("Navi", icon, naviPanel, "Navigation");
 		tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 	}
-	
-	//methods
-	
-	public void resize(int width, int height){
+
+	// methods
+
+	public void resize(int width, int height) {
 		searchPanel.setPreferredSize(new Dimension(width, height));
 		searchPanel.setMaximumSize(new Dimension(width, height));
 		searchPanel.setMinimumSize(new Dimension(width, height));
 		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
 		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
 		toTextField.setPreferredSize(new Dimension(width - 10, 30));
-		
+		infoResultPanel.setPreferredSize(new Dimension(width, height));
+
+	}
+
+	public int getStationId(String stationName) {
+		int stationId = -1;
+		if (!display.getStations().containsKey(stationName))
+			return -1;
+		Set<Entry<String, Station>> set = display.getStations().entrySet();
+		Iterator<Entry<String, Station>> it = set.iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, Station> me = (Map.Entry<String, Station>) it.next();
+			if (((String) me.getKey()).equals(stationName)) {
+				stationId = ((Station) me.getValue()).getId();
+				break;
+			}
+		}
+		return stationId;
 	}
 
 	// Listener methods
 	private void infoTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		infoTextField.setText("");
+		if (infoTextField.getText().equals("Enter text here")) {
+			infoTextField.setText("");
+		}
 	}
 
 	private void fromTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		fromTextField.setText("");
+		if (fromTextField.getText().equals("Enter text here")) {
+			fromTextField.setText("");
+		}
 	}
 
 	private void toTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		toTextField.setText("");
+		if (toTextField.getText().equals("Enter text here")) {
+			toTextField.setText("");
+		}
+	}
+
+	private void swapButtonMouseClicked(java.awt.event.MouseEvent evt) {
+		String temp = fromTextField.getText();
+		fromTextField.setText(toTextField.getText());
+		toTextField.setText(temp);
+
 	}
 
 	private void infoTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println(infoTextField.getText());
-			infoTextField.setText("");
+			String stationName = infoTextField.getText(), result, resultArray[];
+			int stationId = getStationId(stationName);
+			if (stationId == -1) {
+				System.out.println("Problem");
+			} else {
+				// handle
+				Client client = new Client();
+				result = client.handleRequestArrivalTime(
+						client.handleRequest("http://localhost/stations/" + stationId + "/arrivaltimeinfo"));
+				result.trim();
+				resultArray = result.split("\\r\\n|\\n|\\r");
+
+				// ouput
+				infoResultPanel.removeAll();
+				infoResultTextPane = new JTextPane();
+				doc = infoResultTextPane.getStyledDocument();
+				try {
+					mainStationWordStyle();
+					doc.insertString(doc.getLength(), stationName + "\n", null);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				for (int i = 0; i < resultArray.length; i++) {
+					if (i % 4 == 0) {
+						try {
+							stationWordStyle();
+							doc.insertString(doc.getLength(), "\n" + resultArray[i] + "\n", null);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+
+					}
+
+					else {
+						try {
+							infoWordStyle();
+							doc.insertString(doc.getLength(), resultArray[i] + "\n", null);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				infoResultPanel.add(infoResultTextPane);
+				infoResultPanel.updateUI();
+
+			}
+
 		}
 	}
 
 	private void fromTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
 			System.out.println(fromTextField.getText());
-			fromTextField.setText("");
 		}
 	}
 
 	private void toTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
 			System.out.println(toTextField.getText());
-			toTextField.setText("");
 		}
 	}
-	
-	//
 
-	protected static ImageIcon createImageIcon(String path) {
+	// icon
+
+	protected ImageIcon createImageIcon(String path) {
 		java.net.URL imgURL = Search.class.getResource(path);
 		if (imgURL != null) {
 			return new ImageIcon(imgURL);
@@ -184,6 +305,38 @@ public class Search extends Panel {
 		}
 	}
 
+	// word style
+
+	public void createInfoFont() {
+		infoFont = infoTextField.getFont();
+	}
+
+	public void mainStationWordStyle() {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize() + 8);
+		StyleConstants.setBold(aSet, true);
+		StyleConstants.setForeground(aSet, Color.RED);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+
+	}
+
+	public void stationWordStyle() {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize() + 4);
+		StyleConstants.setBold(aSet, true);
+		StyleConstants.setForeground(aSet, Color.BLUE);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+
+	}
+
+	public void infoWordStyle() {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize());
+		StyleConstants.setForeground(aSet, Color.BLACK);
+		StyleConstants.setBold(aSet, false);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+	}
+
 	@Override
 	public void tick() {
 	}
@@ -191,4 +344,17 @@ public class Search extends Panel {
 	@Override
 	public void render(Graphics g) {
 	}
+
+	/*
+	 * 
+	 * JPanel panel = new JPanel(); //remove all components in panel.
+	 * panel.removeAll(); // refresh the panel. panel.updateUI(); // refresh the
+	 * panel. panel.updateUI();
+	 * 
+	 * 
+	 * you can split a string by line break by using the following statement :
+	 * 
+	 * String textStr[] = yourString.split("\\r\\n|\\n|\\r");
+	 * 
+	 */
 }
