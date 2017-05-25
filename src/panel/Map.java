@@ -112,9 +112,9 @@ public class Map extends Panel {
 	public void rescale() {
 		if (x > 0) {
 			x = 0;
-		} else if (frameWidth - size[sizeNum] - 220 < 0) {
-			if (x < frameWidth - size[sizeNum] - 220) {
-				x = frameWidth - size[sizeNum] - 220;
+		} else if (frameWidth - size[sizeNum] - 200 < 0) {
+			if (x < frameWidth - size[sizeNum] - 200) {
+				x = frameWidth - size[sizeNum] - 200;
 			}
 		} else {
 			x = 0;
