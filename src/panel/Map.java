@@ -2,9 +2,13 @@ package panel;
 
 import UI.MouseManager;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 import display.Display;
 import display.ImageLoader;
+import init_data.MapPoint;
+import init_data.Station;
+
 import java.awt.Graphics;
 
 public class Map extends Panel {
@@ -104,17 +108,17 @@ public class Map extends Panel {
 		int tempX, tempY;
 		tempX = mouseManager.getX();
 		tempY = mouseManager.getY();
-		x = (int)((x - tempX) * ((float)sizeAfter / (float)sizeBefore) + tempX);
-		y = (int)((y - tempY) * ((float)sizeAfter / (float)sizeBefore) + tempY);
+		x = (int) ((x - tempX) * ((float) sizeAfter / (float) sizeBefore) + tempX);
+		y = (int) ((y - tempY) * ((float) sizeAfter / (float) sizeBefore) + tempY);
 
 	}
 
 	public void rescale() {
 		if (x > 0) {
 			x = 0;
-		} else if (frameWidth - size[sizeNum] - 220 < 0) {
-			if (x < frameWidth - size[sizeNum] - 220) {
-				x = frameWidth - size[sizeNum] - 220;
+		} else if (frameWidth - size[sizeNum] - 200 < 0) {
+			if (x < frameWidth - size[sizeNum] - 200) {
+				x = frameWidth - size[sizeNum] - 200;
 			}
 		} else {
 			x = 0;
@@ -130,16 +134,81 @@ public class Map extends Panel {
 		}
 	}
 
+	/// map click methods
+	public void clickedStation() {
+		Station clickedStation = checkClickedStation();
+		if (clickedStation == null) {
+
+		} else {
+			if (display.getSearch().getSelectedTab() == 0) {
+				display.getSearch().setInfoStation(clickedStation);
+				display.getSearch().setInfoText(clickedStation.getName());
+				display.getSearch().infoShowResult(clickedStation.getName(), clickedStation.getId());
+			}
+		}
+	}
+
+	public Station checkClickedStation() {
+		if (mouseManager.isClick()) {
+			Station clickedStation = null;
+			float x, y;
+			x = defaultSizePosition((float) (mouseManager.getX() - this.x));
+			y = defaultSizePosition((float) (mouseManager.getY() - this.y));
+			for (HashMap.Entry<Integer, Station> entry : display.getIdStations().entrySet()) {
+				Station temp = entry.getValue();
+				if (temp.isInside(x, y)) {
+					clickedStation = temp;
+					break;
+				}
+			}
+			mouseManager.setClick(false);
+
+			return clickedStation;
+		}
+		return null;
+	}
+
+	public void drawClickStation(Graphics g) {
+		Station station = display.getSearch().getInfoStation();
+		if (display.getSearch().getSelectedTab() == 0 && station != null) {
+			if (station.isRectangle()) {
+				MapPoint p0, p1;
+				p0 = station.getCoordinates().get(0);
+				p1 = station.getCoordinates().get(1);
+				g.fillRect((int) currentSizePosition(p0.getX()) + x, (int) currentSizePosition(p0.getY()) + y,
+						(int) currentSizePosition(p1.getX() - p0.getX()),
+						(int) currentSizePosition(p1.getY() - p0.getY()));
+
+			}
+
+		}
+	}
+
+	public float currentSizePosition(float x) {
+		return x * ((float) size[sizeNum] / 4000f);
+	}
+
+	public float defaultSizePosition(float x) {
+		return x * (4000f / (float) size[sizeNum]);
+	}
+
+	public int currentSizePosition(int x) {
+		return (int) ((float) x * ((float) size[sizeNum] / 4000f));
+	}
+
 	@Override
 	public void tick() {
 		frameWidth = (int) display.getFrame().getBounds().getWidth();
 		frameHeight = (int) display.getFrame().getBounds().getHeight();
 		dragMap();
 		zoom();
+		clickedStation();
+
 	}
 
 	@Override
 	public void render(Graphics g) {
 		g.drawImage(map, x, y, size[sizeNum], size[sizeNum], null);
+		drawClickStation(g);
 	}
 }
