@@ -9,8 +9,12 @@ import java.awt.Graphics;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import java.util.HashMap;
+
 import UI.KeyManager;
 import UI.MouseManager;
+import client.Client;
+import init_data.Station;
 import panel.Map;
 import panel.Search;
 
@@ -28,6 +32,10 @@ public class Display {
 
 	private KeyManager keyManager;
 	private MouseManager mouseManager;
+
+	private Client client;
+	private HashMap<String, Station> nameStations;
+	private HashMap<Integer, Station> idStations;
 
 	public Display(String title, int width, int height, KeyManager keyManager, MouseManager mouseManager) {
 		this.title = title;
@@ -53,11 +61,11 @@ public class Display {
 		canvasPanel.setPreferredSize(new Dimension(width * 4 / 5, height));
 		canvasPanel.setMaximumSize(new Dimension(width * 4 / 5, height));
 		canvasPanel.setMinimumSize(new Dimension(width * 4 / 5, height));
-		canvas = new Canvas();		
+		canvas = new Canvas();
 		canvas.setFocusable(false);
 		canvasPanel.setBackground(Color.WHITE);
 		canvasPanel.add(BorderLayout.CENTER, canvas);
-		
+
 		// panel
 		panel = new JPanel(new BorderLayout());
 		panel.setPreferredSize(new Dimension(width, height));
@@ -67,6 +75,13 @@ public class Display {
 		frame.add(panel);
 		frame.pack();
 		frame.setVisible(true);
+
+		client = new Client();
+
+		nameStations = new HashMap<String, Station>();
+		idStations = new HashMap<Integer, Station>();
+		client.handleRequestStations(client.handleRequest("http://localhost/stations/"), nameStations, idStations);
+		client.close();
 
 		map = new Map(0, 0, width * 4 / 5, height, this, mouseManager);
 		search = new Search(0, 0, width / 5, height, this, mouseManager, keyManager);
@@ -111,4 +126,22 @@ public class Display {
 	public JFrame getFrame() {
 		return frame;
 	}
+
+	public HashMap<String, Station> getNameStations() {
+		return nameStations;
+	}
+
+	public HashMap<Integer, Station> getIdStations() {
+		return idStations;
+	}
+
+	public Map getMap() {
+		return map;
+	}
+
+	public Search getSearch() {
+		return search;
+	}
+	
+
 }

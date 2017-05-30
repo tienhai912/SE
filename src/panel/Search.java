@@ -2,27 +2,56 @@ package panel;
 
 import UI.KeyManager;
 import UI.MouseManager;
+import client.Client;
 import display.Display;
+import init_data.Station;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import javax.swing.Box;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import java.awt.event.ActionListener;
 
 public class Search extends Panel {
 
 	private static final long serialVersionUID = 1L;
 	MouseManager mouseManager;
 	KeyManager keyManager;
-	private JPanel searchPanel, naviPanel, infoPanel;
+	private JPanel searchPanel, naviPanel, infoPanel, infoResultPanel, naviResultPanel;
 	private JTextField infoTextField, fromTextField, toTextField;
 	private JTabbedPane tabbedPane;
+
+	private JTextPane infoResultTextPane, naviResultTextPane;
+	private StyledDocument infoDoc, naviDoc;
+	private Font infoFont;
+	private int cursorPosition, cursorNaviPostion;
+	private Station infoStation, fromStation, toStation;
+	private ArrayList<Station> naviStations;
+	private ArrayList<Integer> naviStationsId;
+	private boolean shortestRoad, fromCursor;
 
 	public Search(int x, int y, int width, int height, Display display, MouseManager mouseManager,
 			KeyManager keyManager) {
@@ -30,9 +59,11 @@ public class Search extends Panel {
 		this.mouseManager = mouseManager;
 		this.keyManager = keyManager;
 		init();
-
+		infoTextField.requestFocusInWindow();
+		cursorPosition = 0;
+		cursorNaviPostion = 0;
 	}
-	
+
 	// init
 
 	public void init() {
@@ -51,15 +82,54 @@ public class Search extends Panel {
 		// important
 		display.getPanel().add(BorderLayout.WEST, searchPanel);
 		display.getFrame().setVisible(true);
+		createInfoFont();
 	}
 
+	///////////////////////////////////////////////////////////////////////// infoTab
+
 	public void infoTab() {
-		infoPanel = new JPanel();
+		infoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));
 		infoPanel.setBackground(Color.WHITE);
-		ImageIcon icon = createImageIcon("");
-		infoTextField = new JTextField("Enter text here");
-		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
+		ImageIcon icon = createImageIcon("/train.png");
+
+		// infoTextField
+		createInfoTextField();
+
+		// infoResultPanel
+		createInfoResultPanel();
+
+		//
+		tabbedPane.addTab("Info", icon, infoPanel, "Station Infomation");
+		tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+	}
+
+	public void createInfoTextField() {
+
+		// name
+		infoPanel.add(Box.createHorizontalStrut(20));
+		JLabel infoText = new JLabel("Station");
+		infoPanel.add(infoText);
+		infoPanel.add(Box.createHorizontalStrut(20));
+
+		// infoTextField
+		infoTextField = new JTextField("");
+		infoTextField.setPreferredSize(new Dimension(width - 40, 30));
 		infoTextField.selectAll();
+		infoPanel.add(infoTextField);
+
+		// delete button
+		ImageIcon deleteIcon = createImageIcon("/cancel.png");
+		JButton infoDeleteButton = new JButton();
+		infoDeleteButton.setIcon(deleteIcon);
+		infoDeleteButton.setPreferredSize(new Dimension(30, 30));
+		infoDeleteButton.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				infoTextField.setText("");
+				infoTextField.requestFocusInWindow();
+			}
+		});
+
+		infoPanel.add(infoDeleteButton);
 
 		// listener
 		infoTextField.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -73,23 +143,78 @@ public class Search extends Panel {
 				infoTextFieldKeyPressed(evt);
 			}
 		});
-		//
-		infoPanel.add(infoTextField);
-		tabbedPane.addTab("Info", icon, infoPanel, "Station Infomation");
-		tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 	}
 
+	public void createInfoResultPanel() {
+		// infoResultPanel
+		infoResultPanel = new JPanel();
+		infoResultPanel.setPreferredSize(new Dimension(width, height - 50));
+		infoResultPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		infoResultPanel.setBackground(Color.WHITE);
+
+		infoResultTextPane = new JTextPane();
+		infoDoc = infoResultTextPane.getStyledDocument();
+
+		infoResultPanel.add(infoResultTextPane);
+		infoPanel.add(infoResultPanel);
+	}
+
+	/////////////////////////////////////////////////////////////////////////// naviTab
 
 	public void naviTab() {
-		naviPanel = new JPanel();
+		naviPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));
 		naviPanel.setBackground(Color.WHITE);
-		ImageIcon icon = createImageIcon("");
+		ImageIcon icon = createImageIcon("/arrow.png");
 
+		// fromTextField
+		createFromTextField();
+
+		// toTextField
+		createToTextField();
+
+		// swapButton
+
+		createSwapButton();
+
+		// choiceBox
+		createChoiceBox();
+
+		// naviResultPanel
+		createNaviResultPanel();
+
+		//
+		tabbedPane.addTab("Navi", icon, naviPanel, "Navigation");
+		tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
+
+		fromCursor = true;
+	}
+
+	public void createFromTextField() {
 		// from
-		fromTextField = new JTextField("Enter text here");
-		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
+		naviPanel.add(Box.createHorizontalStrut(20));
+		JLabel fromText = new JLabel("Starting Point");
+		naviPanel.add(fromText);
+		naviPanel.add(Box.createHorizontalStrut(20));
+		fromTextField = new JTextField("");
+		fromTextField.setPreferredSize(new Dimension(width - 40, 30));
 		fromTextField.selectAll();
+
 		naviPanel.add(fromTextField);
+
+		// delete button
+		ImageIcon deleteIcon = createImageIcon("/cancel.png");
+		JButton fromDeleteButton = new JButton();
+		fromDeleteButton.setIcon(deleteIcon);
+		fromDeleteButton.setPreferredSize(new Dimension(30, 30));
+		fromDeleteButton.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				fromTextField.setText("");
+				fromTextField.requestFocusInWindow();
+				fromCursor = true;
+			}
+		});
+
+		naviPanel.add(fromDeleteButton);
 
 		// listener
 		fromTextField.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -102,12 +227,33 @@ public class Search extends Panel {
 				fromTextFieldKeyPressed(evt);
 			}
 		});
+	}
 
+	public void createToTextField() {
 		// to
-		toTextField = new JTextField("Enter text here");
-		toTextField.setPreferredSize(new Dimension(width - 10, 30));
+		naviPanel.add(Box.createHorizontalStrut(20));
+		JLabel toText = new JLabel("Destination");
+		naviPanel.add(toText);
+		naviPanel.add(Box.createHorizontalStrut(20));
+		toTextField = new JTextField("");
+		toTextField.setPreferredSize(new Dimension(width - 40, 30));
 		toTextField.selectAll();
 		naviPanel.add(toTextField);
+
+		// delete button
+		ImageIcon deleteIcon = createImageIcon("/cancel.png");
+		JButton toDeleteButton = new JButton();
+		toDeleteButton.setIcon(deleteIcon);
+		toDeleteButton.setPreferredSize(new Dimension(30, 30));
+		toDeleteButton.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				toTextField.setText("");
+				toTextField.requestFocusInWindow();
+				fromCursor = false;
+			}
+		});
+
+		naviPanel.add(toDeleteButton);
 
 		// listener
 		toTextField.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -120,75 +266,362 @@ public class Search extends Panel {
 				toTextFieldKeyPressed(evt);
 			}
 		});
-
-		//
-		tabbedPane.addTab("Navi", icon, naviPanel, "Navigation");
-		tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 	}
-	
-	//methods
-	
-	public void resize(int width, int height){
+
+	public void createSwapButton() {
+		// swapButton
+
+		naviPanel.add(Box.createHorizontalStrut(20));
+		ImageIcon swapIcon = createImageIcon("/switch.png");
+		JButton swapButton = new JButton("Swap");
+		swapButton.setIcon(swapIcon);
+		swapButton.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				swapButtonMouseClicked(evt);
+			}
+		});
+		naviPanel.add(swapButton);
+		naviPanel.add(Box.createHorizontalStrut(20));
+	}
+
+	public void createChoiceBox() {
+		// choiceBox
+		String list[] = { "Shortest Road", "Least train Switching" };
+		JComboBox<String> choiceBox = new JComboBox<String>(list);
+		choiceBox.setEditable(false);
+		choiceBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String currentString = (String) choiceBox.getSelectedItem();
+				if (currentString.equals("Shortest Road"))
+					shortestRoad = true;
+				else
+					shortestRoad = false;
+			}
+		});
+
+		naviPanel.add(choiceBox);
+
+	}
+
+	public void createNaviResultPanel() {
+		// infoResultPanel
+		naviResultPanel = new JPanel();
+		naviResultPanel.setPreferredSize(new Dimension(width, height - 50));
+		naviResultPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		naviResultPanel.setBackground(Color.WHITE);
+
+		naviResultTextPane = new JTextPane();
+		naviDoc = naviResultTextPane.getStyledDocument();
+
+		naviResultPanel.add(naviResultTextPane);
+		naviPanel.add(naviResultPanel);
+	}
+
+	// methods
+
+	public void resize(int width, int height) {
 		searchPanel.setPreferredSize(new Dimension(width, height));
 		searchPanel.setMaximumSize(new Dimension(width, height));
 		searchPanel.setMinimumSize(new Dimension(width, height));
-		infoTextField.setPreferredSize(new Dimension(width - 10, 30));
-		fromTextField.setPreferredSize(new Dimension(width - 10, 30));
-		toTextField.setPreferredSize(new Dimension(width - 10, 30));
-		
+		infoTextField.setPreferredSize(new Dimension(width - 40, 30));
+		fromTextField.setPreferredSize(new Dimension(width - 40, 30));
+		toTextField.setPreferredSize(new Dimension(width - 40, 30));
+		infoResultPanel.setPreferredSize(new Dimension(width, height));
+		searchPanel.updateUI();
+
+	}
+
+	public int getStationId(String stationName) {
+		int stationId = -1;
+		if (!display.getNameStations().containsKey(stationName))
+			return -1;
+		stationId = ((Station) display.getNameStations().get(stationName)).getId();
+		return stationId;
+	}
+
+	public void infoShowResult() {
+		String result, resultArray[];
+		// handle
+		Client client = new Client();
+		result = client.handleRequestArrivalTime(
+				client.handleRequest("http://localhost/stations/" + infoStation.getId() + "/arrivaltimeinfo"));
+		result.trim();
+		resultArray = result.split("\\r\\n|\\n|\\r");
+
+		// output
+		infoResultPanel.removeAll();
+		infoResultTextPane = new JTextPane();
+		infoDoc = infoResultTextPane.getStyledDocument();
+		try {
+			mainStationWordStyle(infoDoc);
+			infoDoc.insertString(infoDoc.getLength(), infoStation.getName() + "\n", null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		for (int i = 0; i < resultArray.length; i++) {
+			if (i % 4 == 0) {
+				try {
+					stationWordStyle(infoDoc);
+					infoDoc.insertString(infoDoc.getLength(), "\n" + resultArray[i] + "\n", null);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			else {
+				try {
+					infoWordStyle(infoDoc);
+					infoDoc.insertString(infoDoc.getLength(), resultArray[i] + "\n", null);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		infoResultPanel.add(infoResultTextPane);
+		infoResultPanel.updateUI();
+	}
+
+	public void naviShowResult() {
+		if (fromStation != null && toStation != null) {
+			String result, resultArray[];
+			// handle
+			Client client = new Client();
+			naviStationsId = new ArrayList<Integer>();
+			if (shortestRoad) {
+				result = client.handleRequestNavi(
+						client.handleRequest(
+								"http://localhost/nav/" + fromStation.getId() + "/" + toStation.getId() + "/shortest"),
+						naviStationsId);
+			} else {
+				result = client.handleRequestNavi(client.handleRequest(
+						"http://localhost/nav/" + fromStation.getId() + "/" + toStation.getId() + "/leasttransfer"),
+						naviStationsId);
+			}
+			result.trim();
+			resultArray = result.split("\\r\\n|\\n|\\r");
+			naviStations = new ArrayList<Station>();
+			for (int i : naviStationsId) {
+				naviStations.add((Station) display.getIdStations().get(i));
+			}
+
+			// output
+			naviResultPanel.removeAll();
+			naviResultTextPane = new JTextPane();
+			naviDoc = naviResultTextPane.getStyledDocument();
+			try {
+				mainStationWordStyle(naviDoc);
+				naviDoc.insertString(naviDoc.getLength(), fromStation.getName() + "\n", null);
+				stationWordStyle(naviDoc);
+				naviDoc.insertString(naviDoc.getLength(), fromStation.getName() + "\n", null);
+				mainStationWordStyle(naviDoc);
+				naviDoc.insertString(naviDoc.getLength(), toStation.getName() + "\n", null);
+				stationWordStyle(naviDoc);
+				for (int i = 0; i < resultArray.length; i++) {
+					naviDoc.insertString(naviDoc.getLength(), resultArray[i] + "\n", null);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			naviResultPanel.add(naviResultTextPane);
+			naviResultPanel.updateUI();
+		}
+
+	}
+
+	public int getSelectedTab() {
+		return tabbedPane.getSelectedIndex();
+	}
+
+	public void setInfoText(String s) {
+		infoTextField.setText(s);
+		infoTextField.requestFocusInWindow();
+		infoTextField.setCaretPosition(infoTextField.getText().length());
+	}
+
+	public void setFromText(String s) {
+		fromTextField.setText(s);
+		fromTextField.requestFocusInWindow();
+		fromTextField.setCaretPosition(fromTextField.getText().length());
+	}
+
+	public void setToText(String s) {
+		toTextField.setText(s);
+		toTextField.requestFocusInWindow();
+		toTextField.setCaretPosition(toTextField.getText().length());
 	}
 
 	// Listener methods
 	private void infoTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		infoTextField.setText("");
 	}
 
 	private void fromTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		fromTextField.setText("");
 	}
 
 	private void toTextFieldMouseClicked(java.awt.event.MouseEvent evt) {
-		toTextField.setText("");
+	}
+
+	private void swapButtonMouseClicked(java.awt.event.MouseEvent evt) {
+		String temp = fromTextField.getText();
+		fromTextField.setText(toTextField.getText());
+		toTextField.setText(temp);
+
 	}
 
 	private void infoTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println(infoTextField.getText());
-			infoTextField.setText("");
+			String stationName = infoTextField.getText();
+			int stationId = getStationId(stationName);
+			if (stationId == -1) {
+				System.out.println("Problem");
+			} else {
+				infoStation = (Station) display.getNameStations().get(stationName);
+				infoShowResult();
+			}
+
 		}
 	}
 
 	private void fromTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println(fromTextField.getText());
-			fromTextField.setText("");
+			String stationName = fromTextField.getText();
+			int stationId = getStationId(stationName);
+			if (stationId == -1) {
+				System.out.println("Problem from");
+			} else {
+				fromStation = (Station) display.getNameStations().get(stationName);
+				naviShowResult();
+			}
 		}
 	}
 
 	private void toTextFieldKeyPressed(java.awt.event.KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println(toTextField.getText());
-			toTextField.setText("");
+			String stationName = toTextField.getText();
+			int stationId = getStationId(stationName);
+			if (stationId == -1) {
+				System.out.println("Problem to");
+			} else {
+				toStation = (Station) display.getNameStations().get(stationName);
+				naviShowResult();
+			}
 		}
 	}
-	
-	//
 
-	protected static ImageIcon createImageIcon(String path) {
+	// icon
+
+	protected ImageIcon createImageIcon(String path) {
 		java.net.URL imgURL = Search.class.getResource(path);
 		if (imgURL != null) {
-			return new ImageIcon(imgURL);
+			ImageIcon icon = new ImageIcon(imgURL);
+			Image img = icon.getImage();
+			Image newimg = img.getScaledInstance(20, 20, java.awt.Image.SCALE_SMOOTH);
+			icon = new ImageIcon(newimg);
+			return icon;
 		} else {
 			System.err.println("Couldn't find file: " + path);
 			return null;
 		}
 	}
 
+	// word style
+
+	public void createInfoFont() {
+		infoFont = infoTextField.getFont();
+	}
+
+	public void mainStationWordStyle(StyledDocument doc) {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize() + 8);
+		StyleConstants.setBold(aSet, true);
+		StyleConstants.setForeground(aSet, Color.RED);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+
+	}
+
+	public void stationWordStyle(StyledDocument doc) {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize() + 4);
+		StyleConstants.setBold(aSet, true);
+		StyleConstants.setForeground(aSet, Color.BLUE);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+
+	}
+
+	public void infoWordStyle(StyledDocument doc) {
+		SimpleAttributeSet aSet = new SimpleAttributeSet();
+		StyleConstants.setFontSize(aSet, infoFont.getSize());
+		StyleConstants.setForeground(aSet, Color.BLACK);
+		StyleConstants.setBold(aSet, false);
+		doc.setParagraphAttributes(doc.getLength(), 0, aSet, false);
+	}
+
 	@Override
 	public void tick() {
+		// System.out.println(tabbedPane.getSelectedIndex());
 	}
 
 	@Override
 	public void render(Graphics g) {
 	}
+
+	// SETTER GETTER
+	public Station getInfoStation() {
+		return infoStation;
+	}
+
+	public void setInfoStation(Station infoStation) {
+		this.infoStation = infoStation;
+	}
+
+	public Station getFromStation() {
+		return fromStation;
+	}
+
+	public void setFromStation(Station fromStation) {
+		this.fromStation = fromStation;
+	}
+
+	public Station getToStation() {
+		return toStation;
+	}
+
+	public void setToStation(Station toStation) {
+		this.toStation = toStation;
+	}
+
+	public boolean isFromCursor() {
+		return fromCursor;
+	}
+
+	public void setFromCursor(boolean fromCursor) {
+		this.fromCursor = fromCursor;
+	}
+
+	public boolean isShortestRoad() {
+		return shortestRoad;
+	}
+
+	public ArrayList<Station> getNaviStations() {
+		return naviStations;
+	}
+	
+	
+
+	/*
+	 * 
+	 * JPanel panel = new JPanel(); //remove all components in panel.
+	 * panel.removeAll(); // refresh the panel. panel.updateUI(); // refresh the
+	 * panel.updateUI();
+	 * 
+	 * 
+	 * you can split a string by line break by using the following statement :
+	 * 
+	 * String textStr[] = yourString.split("\\r\\n|\\n|\\r");
+	 * 
+	 */
+
 }
