@@ -296,9 +296,10 @@ public class Search extends Panel {
 					shortestRoad = true;
 				else
 					shortestRoad = false;
+				naviShowResult();
 			}
 		});
-
+		shortestRoad = true;
 		naviPanel.add(choiceBox);
 
 	}

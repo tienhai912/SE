@@ -202,7 +202,9 @@ public class Client {
 			JSONArray array = (JSONArray) obj.get("route");
 			for (int i = 0; i < array.size(); i++) {
 				JSONObject obj2 = (JSONObject) array.get(i);
-				naviStationsId.add(Integer.parseInt((String) obj2.get("stationId")));
+				String str ="";
+				str=str+obj2.get("stationId");
+				naviStationsId.add(Integer.parseInt(str));
 			}
 		} catch (ParseException pe) {
 			System.out.println(pe);
