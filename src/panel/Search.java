@@ -608,7 +608,7 @@ public class Search extends Panel {
 	@Override
 	public void tick() {
 		count++;
-		if (count >= 1800) {
+		if (count >= 1800 && infoStation !=null) {
 			infoShowStationResult();
 
 			count = 0;

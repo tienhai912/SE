@@ -248,6 +248,10 @@ public class Client {
 		}
 		return result;
 	}
+	
+	public String changeTimeToMinute(String s){
+		return "";
+	}
 
 	public void Slit(String s) {
 		String time = s;
