@@ -2,9 +2,15 @@ package panel;
 
 import UI.MouseManager;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 import display.Display;
 import display.ImageLoader;
+import init_data.Line;
+import init_data.MapPoint;
+import init_data.Station;
+
+import java.awt.Color;
 import java.awt.Graphics;
 
 public class Map extends Panel {
@@ -104,17 +110,17 @@ public class Map extends Panel {
 		int tempX, tempY;
 		tempX = mouseManager.getX();
 		tempY = mouseManager.getY();
-		x = (int)((x - tempX) * ((float)sizeAfter / (float)sizeBefore) + tempX);
-		y = (int)((y - tempY) * ((float)sizeAfter / (float)sizeBefore) + tempY);
+		x = (int) ((x - tempX) * ((float) sizeAfter / (float) sizeBefore) + tempX);
+		y = (int) ((y - tempY) * ((float) sizeAfter / (float) sizeBefore) + tempY);
 
 	}
 
 	public void rescale() {
 		if (x > 0) {
 			x = 0;
-		} else if (frameWidth - size[sizeNum] - 220 < 0) {
-			if (x < frameWidth - size[sizeNum] - 220) {
-				x = frameWidth - size[sizeNum] - 220;
+		} else if (frameWidth - size[sizeNum] - 276 < 0) {
+			if (x < frameWidth - size[sizeNum] - 276) {
+				x = frameWidth - size[sizeNum] - 276;
 			}
 		} else {
 			x = 0;
@@ -130,16 +136,154 @@ public class Map extends Panel {
 		}
 	}
 
+	/// map click methods
+	public void mapClicked() {
+		if (mouseManager.isClick()) {
+			Station clickedStation = checkClickedStation();
+			if (clickedStation == null) {
+				if (display.getSearch().getSelectedTab() == 0) {
+					Line clickedLine = checkClickedLine();
+					if (clickedLine != null) {
+						display.getSearch().setInfoLine(clickedLine);
+						display.getSearch().setInfoText(clickedLine.getCode() + ": " + clickedLine.getName());
+						display.getSearch().infoShowLineResult();
+
+						display.getSearch().setInfoStation(null);
+					}
+				}
+
+			} else {
+				if (display.getSearch().getSelectedTab() == 0) {
+					display.getSearch().setInfoStation(clickedStation);
+					display.getSearch().setInfoText(clickedStation.getName());
+					display.getSearch().infoShowStationResult();
+
+					display.getSearch().setInfoLine(null);
+				} else {
+					if (display.getSearch().isFromCursor()) {
+						display.getSearch().setFromStation(clickedStation);
+						display.getSearch().setFromText(clickedStation.getName());
+						display.getSearch().setFromCursor(false);
+						display.getSearch().naviShowResult();
+					} else {
+						display.getSearch().setToStation(clickedStation);
+						display.getSearch().setToText(clickedStation.getName());
+						display.getSearch().setFromCursor(true);
+						display.getSearch().naviShowResult();
+					}
+				}
+			}
+			mouseManager.setClick(false);
+		}
+	}
+
+	public Station checkClickedStation() {
+		Station clickedStation = null;
+		float x, y;
+		x = defaultSizePosition((float) (mouseManager.getX() - this.x));
+		y = defaultSizePosition((float) (mouseManager.getY() - this.y));
+		for (HashMap.Entry<Integer, Station> entry : display.getIdStations().entrySet()) {
+			Station temp = entry.getValue();
+			if (temp.isInside(x, y)) {
+				clickedStation = temp;
+				break;
+			}
+		}
+
+		return clickedStation;
+	}
+
+	public Line checkClickedLine() {
+		Line clickedLine = null;
+		float x, y;
+		x = defaultSizePosition((float) (mouseManager.getX() - this.x));
+		y = defaultSizePosition((float) (mouseManager.getY() - this.y));
+		for (HashMap.Entry<String, Line> entry : display.getIdLines().entrySet()) {
+			Line temp = entry.getValue();
+			if (temp.isInside(x, y)) {
+				clickedLine = temp;
+				break;
+			}
+		}
+		mouseManager.setClick(false);
+
+		return clickedLine;
+
+	}
+
+	public void drawResult(Graphics g) {
+
+		if (display.getSearch().getSelectedTab() == 0) {
+			Station station = display.getSearch().getInfoStation();
+			Line line = display.getSearch().getInfoLine();
+			if (station != null) {
+				drawStation(g, station);
+			} else if (line != null) {
+				for (int temp : display.getSearch().getInfoLineStationsId()) {
+					Station tempStation = display.getIdStations().get(temp);
+					drawStation(g, tempStation);
+				}
+			}
+
+		} else if (display.getSearch().getSelectedTab() == 1 && display.getSearch().getFromStation() != null
+				&& display.getSearch().getToStation() != null) {
+			for (Station temp : display.getSearch().getNaviStations()) {
+				drawStation(g, temp);
+			}
+		}
+	}
+
+	public void drawStation(Graphics g, Station station) {
+		if (station.isRectangle()) {
+			MapPoint p0, p1;
+			p0 = station.getCoordinates().get(0);
+			p1 = station.getCoordinates().get(1);
+			g.setColor(Color.RED);
+			g.fillRect((int) currentSizePosition(p0.getX() - 5) + x, (int) currentSizePosition(p0.getY() - 5) + y,
+					(int) currentSizePosition(p1.getX() - p0.getX() + 15),
+					(int) currentSizePosition(p1.getY() - p0.getY() + 15));
+		} else {
+			MapPoint p0, p2, p4, p6;
+			p0 = station.getCoordinates().get(0);
+			p2 = station.getCoordinates().get(2);
+			p4 = station.getCoordinates().get(4);
+			p6 = station.getCoordinates().get(6);
+			g.setColor(Color.RED);
+			g.fillRect((int) currentSizePosition(p0.getX() - 5) + x, (int) currentSizePosition(p0.getY() - 5) + y,
+					(int) currentSizePosition(p6.getX() - p0.getX() + 15),
+					(int) currentSizePosition(p6.getY() - p0.getY() + 15));
+			g.fillRect((int) currentSizePosition(p2.getX() - 5) + x, (int) currentSizePosition(p2.getY() - 5) + y,
+					(int) currentSizePosition(p4.getX() - p2.getX() + 15),
+					(int) currentSizePosition(p4.getY() - p2.getY() + 15));
+		}
+	}
+
+	public float currentSizePosition(float x) {
+		return x * ((float) size[sizeNum] / 4000f);
+	}
+
+	public float defaultSizePosition(float x) {
+		return x * (4000f / (float) size[sizeNum]);
+	}
+
+	public int currentSizePosition(int x) {
+		return (int) ((float) x * ((float) size[sizeNum] / 4000f));
+	}
+
 	@Override
 	public void tick() {
 		frameWidth = (int) display.getFrame().getBounds().getWidth();
 		frameHeight = (int) display.getFrame().getBounds().getHeight();
 		dragMap();
 		zoom();
+		mapClicked();
+
 	}
 
 	@Override
 	public void render(Graphics g) {
+		drawResult(g);
 		g.drawImage(map, x, y, size[sizeNum], size[sizeNum], null);
+
 	}
 }
