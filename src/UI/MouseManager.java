@@ -9,13 +9,14 @@ import java.awt.event.MouseWheelListener;
 public class MouseManager implements MouseListener, MouseMotionListener, MouseWheelListener {
 
 	private int x, y;
-	private boolean Pressed = false, zoomIn = false, zoomOut = false;
+	private boolean Pressed = false, zoomIn = false, zoomOut = false, click = false;
 	private int notches;
 	private long zoomTimer = 500, lastZoom;
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		System.out.println(x + "/" + y);
+		//System.out.println(x + "/" + y);
+		click = true;
 	}
 
 	@Override
@@ -99,5 +100,14 @@ public class MouseManager implements MouseListener, MouseMotionListener, MouseWh
 	public boolean isZoomOut() {
 		return zoomOut;
 	}
+
+	public boolean isClick() {
+		return click;
+	}
+
+	public void setClick(boolean click) {
+		this.click = click;
+	}
+	
 
 }
