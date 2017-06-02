@@ -144,7 +144,7 @@ public class Map extends Panel {
 					Line clickedLine = checkClickedLine();
 					if (clickedLine != null) {
 						display.getSearch().setInfoLine(clickedLine);
-						display.getSearch().setInfoText(clickedLine.getCode());
+						display.getSearch().setInfoText(clickedLine.getCode() + ": " + clickedLine.getName());
 						display.getSearch().infoShowLineResult();
 
 						display.getSearch().setInfoStation(null);
@@ -220,7 +220,7 @@ public class Map extends Panel {
 			} else if (line != null) {
 				for (int temp : display.getSearch().getInfoLineStationsId()) {
 					Station tempStation = display.getIdStations().get(temp);
-					drawStation(g,tempStation);
+					drawStation(g, tempStation);
 				}
 			}
 
@@ -279,8 +279,8 @@ public class Map extends Panel {
 
 	@Override
 	public void render(Graphics g) {
-
-		g.drawImage(map, x, y, size[sizeNum], size[sizeNum], null);
 		drawResult(g);
+		g.drawImage(map, x, y, size[sizeNum], size[sizeNum], null);
+		
 	}
 }
